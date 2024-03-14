@@ -20,4 +20,4 @@ from using the code.
 © BGEZ 2024
 
 The required parameter file can be found at
-https://www.dnb.nl/voor-de-sector/open-boek-toezicht/sectoren/pensioenfondsen/dnb-publiceert-definitieve-scenariosets-bij-wet-toekomst-pensioenen/.
+https://www.dnb.nl/voor-de-sector/open-boek-toezicht/sectoren/pensioenfondsen/dnb-publiceert-definitieve-scenariosets-bij-wet-toekomst-pensioenen/. A sample parameter file (without the actual scenarios) has been included in this repository.
