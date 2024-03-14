@@ -211,10 +211,10 @@ f_Andersen <- function(Vinst) {
   return(V2)
 }
 
-Vlong_Andersen = EX[1]
-kappa_Andersen = K[1, 1]
-epsilon_Andersen = omega
-dT_Andersen = Deltat
+Vlong_Andersen <- EX[1]
+kappa_Andersen <- K[1, 1]
+epsilon_Andersen <- omega
+dT_Andersen <- Deltat
 k1_Andersen <- exp(-kappa_Andersen * dT_Andersen)
 k2_Andersen <-
   epsilon_Andersen ^ 2 * k1_Andersen * (1 - k1_Andersen) / kappa_Andersen
