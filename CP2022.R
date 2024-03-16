@@ -29,8 +29,8 @@ DNB <- F # Use DNB scenarios or not
 setwd("~/R")
 filename <- "cp2022-p-scenarioset-20k-2024q1.xlsx"
 N <- 20000 # Number of scenarios
-Tmax <- 100 # Number of years
-Taumax <- 100 # Number of maturities
+Tmax <- 100 # Number of years >= 2
+Taumax <- 100 # Number of maturities >= 2
 CPB_Inflatie <- c(
   rep(0.038, 12), # Number of months remaining in the year
   rep(0.026, 12),
@@ -61,7 +61,7 @@ DNB_Parameters <-
 DNB_Phi <-
   unname(as.matrix(
     read.xlsx(filename, sheet = "7_Renteparameter_phi_N", colNames = F)
-  ))[1:Taumax,]
+  ))[1:Taumax, 1:(Tmax + 1)]
 DNB_Psi <-
   unname(as.matrix(
     read.xlsx(filename, sheet = "8_Renteparameter_Psi_N", colNames = F)
