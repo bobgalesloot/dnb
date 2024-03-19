@@ -52,7 +52,7 @@ if (Tmax * 12 <= length(CPB_Inflatie)) {
 }
 rm(CPB_Inflatie)
 
-set.seed(123 + 1)
+set.seed(42)
 
 library(openxlsx)
 
