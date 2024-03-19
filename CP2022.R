@@ -427,8 +427,6 @@ compare <- function(A,
     bty = "n",
     pch = 20,
     asp = 1,
-    #
-    #         pty = "s",
     xlab = paste(nameA, ", quantiles", sep = ""),
     ylab = paste(nameB, ", quantiles", sep = ""),
     panel.first = rect(
