@@ -8,7 +8,7 @@ https://www.rijksoverheid.nl/documenten/rapporten/2022/11/29/bijlage-rapport-adv
 and
 https://www.rijksoverheid.nl/documenten/rapporten/2022/11/29/bijlage-2-technische-appendix.
 
-Date: 14 March 2024
+Date: 19 March 2024
 
 Author: Bob Galesloot
 
@@ -22,5 +22,5 @@ from using the code.
 
 © BGEZ 2024
 
-The required parameter file (by the Dutch central bank) can be found at
-https://www.dnb.nl/voor-de-sector/open-boek-toezicht/sectoren/pensioenfondsen/dnb-publiceert-definitieve-scenariosets-bij-wet-toekomst-pensioenen/. A sample parameter file (without the actual scenarios) has been included in this repository.
+The required xlsx parameter file (by the Dutch central bank) can be found at
+https://www.dnb.nl/voor-de-sector/open-boek-toezicht/sectoren/pensioenfondsen/dnb-publiceert-definitieve-scenariosets-bij-wet-toekomst-pensioenen/. A sample parameter file (without the actual scenarios) has been included in this repository. The csv file is not required, but can also be found (as zip) at the DNB website.
