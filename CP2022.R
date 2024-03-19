@@ -4,7 +4,7 @@
 ###   Technical Appendix: Specification of the CP2022 Model
 ###   9.1 Simulation under P
 ###
-### Date: 14 March 2024
+### Date: 19 March 2024
 ### Author: Bob Galesloot
 ###
 ### Please send comments, suggestions, bugs, code etc. to
@@ -20,17 +20,19 @@
 ### Press cmd + shift + return to run all
 
 #install.packages("openxlsx")
-#rm(list = ls(all = T))
-#gc()
+
+rm(list = ls(all = T))
+gc()
 
 start_time <- Sys.time()
 
-DNB <- F # Use DNB scenarios or not
+DNB <- T # Use DNB scenarios or not
 setwd("~/R")
-filename <- "cp2022-p-scenarioset-20k-2024q1.xlsx"
-N <- 20000 # Number of scenarios
-Tmax <- 100 # Number of years >= 2
-Taumax <- 100 # Number of maturities >= 2
+filename_xlsx <- "cp2022-p-scenarioset-20k-2024q1.xlsx"
+filename_csv <- "CP2022 P scenarioset 100K 2024Q1.csv"
+N <- 25000 # Number of scenarios >= 2 (<= 100000 if DNB)
+Tmax <- 10 # Number of years >= 2
+Taumax <- 20 # Number of maturities >= 2
 CPB_Inflatie <- c(
   rep(0.038, 12), # Number of months remaining in the year
   rep(0.026, 12),
@@ -50,50 +52,115 @@ if (Tmax * 12 <= length(CPB_Inflatie)) {
 }
 rm(CPB_Inflatie)
 
-set.seed(123)
+set.seed(123 + 1)
 
 library(openxlsx)
 
 DNB_Parameters <-
   as.numeric(as.matrix(read.xlsx(
-    filename, sheet = "0_Parameters", colNames = T
+    filename_xlsx, sheet = "0_Parameters", colNames = T
   ))[1:47, 2])
-DNB_Phi <-
-  unname(as.matrix(
-    read.xlsx(filename, sheet = "7_Renteparameter_phi_N", colNames = F)
-  ))[1:Taumax, 1:(Tmax + 1)]
-DNB_Psi <-
-  unname(as.matrix(
-    read.xlsx(filename, sheet = "8_Renteparameter_Psi_N", colNames = F)
-  ))[1:Taumax,]
-if (DNB) {
-  DNB_X1 <-
+if (N > 20000) {
+  DNB_Phi <- unname(as.matrix(read.csv(
+    filename_csv,
+    skip = 600000,
+    nrows = min(100, Taumax),
+    header = F
+  )))[, 1:(Tmax + 1)]
+  DNB_Psi <- unname(as.matrix(read.csv(
+    filename_csv,
+    skip = 600100,
+    nrows = min(100, Taumax),
+    header = F
+  )))[, 1:3]
+  if (DNB) {
+    DNB_X1 <- unname(as.matrix(read.csv(
+      filename_csv,
+      nrows = min(100000, N), header = F
+    )))[, 1:(Tmax + 1)]
+    DNB_X2 <- unname(as.matrix(read.csv(
+      filename_csv,
+      skip = 100000,
+      nrows = min(100000, N),
+      header = F
+    )))[, 1:(Tmax + 1)]
+    DNB_X3 <- unname(as.matrix(read.csv(
+      filename_csv,
+      skip = 200000,
+      nrows = min(100000, N),
+      header = F
+    )))[, 1:(Tmax + 1)]
+    DNB_Aandelenrendement <- unname(as.matrix(
+      read.csv(
+        filename_csv,
+        skip = 300000,
+        nrows = min(100000, N),
+        header = F,
+        sep = ",",
+        dec = "."
+      )
+    ))[, 1:min(100, Tmax)]
+    DNB_Prijsinflatie_EU <- unname(as.matrix(
+      read.csv(
+        filename_csv,
+        skip = 400000,
+        nrows = min(100000, N),
+        header = F,
+        sep = ",",
+        dec = "."
+      )
+    ))[, 1:min(100, Tmax)]
+    DNB_Prijsinflatie_NL <- unname(as.matrix(
+      read.csv(
+        filename_csv,
+        skip = 500000,
+        nrows = min(100000, N),
+        header = F,
+        sep = ",",
+        dec = "."
+      )
+    ))[, 1:min(100, Tmax)]
+  }
+} else {
+  DNB_Phi <-
     unname(as.matrix(
-      read.xlsx(filename, sheet = "1_Toestandsvariabele_1", colNames = F)
-    ))[1:N, 1:(Tmax + 1)]
-  DNB_X2 <-
+      read.xlsx(filename_xlsx, sheet = "7_Renteparameter_phi_N", colNames = F)
+    ))[1:Taumax, 1:(Tmax + 1)]
+  DNB_Psi <-
     unname(as.matrix(
-      read.xlsx(filename, sheet = "2_Toestandsvariabele_2", colNames = F)
-    ))[1:N, 1:(Tmax + 1)]
-  DNB_X3 <-
-    unname(as.matrix(
-      read.xlsx(filename, sheet = "3_Toestandsvariabele_3", colNames = F)
-    ))[1:N, 1:(Tmax + 1)]
-  DNB_Aandelenrendement <-
-    unname(as.matrix(
-      read.xlsx(filename, sheet = "4_Aandelenrendement", colNames = F)
-    ))[1:N, 1:Tmax]
-  DNB_Prijsinflatie_EU <-
-    unname(as.matrix(
-      read.xlsx(filename, sheet = "5_Prijsinflatie_EU", colNames = F)
-    ))[1:N, 1:Tmax]
-  DNB_Prijsinflatie_NL <-
-    unname(as.matrix(
-      read.xlsx(filename, sheet = "6_Prijsinflatie_NL", colNames = F)
-    ))[1:N, 1:Tmax]
-  
+      read.xlsx(filename_xlsx, sheet = "8_Renteparameter_Psi_N", colNames = F)
+    ))[1:Taumax,]
+  if (DNB) {
+    DNB_X1 <-
+      unname(as.matrix(
+        read.xlsx(filename_xlsx, sheet = "1_Toestandsvariabele_1", colNames = F)
+      ))[1:N, 1:(Tmax + 1)]
+    DNB_X2 <-
+      unname(as.matrix(
+        read.xlsx(filename_xlsx, sheet = "2_Toestandsvariabele_2", colNames = F)
+      ))[1:N, 1:(Tmax + 1)]
+    DNB_X3 <-
+      unname(as.matrix(
+        read.xlsx(filename_xlsx, sheet = "3_Toestandsvariabele_3", colNames = F)
+      ))[1:N, 1:(Tmax + 1)]
+    DNB_Aandelenrendement <-
+      unname(as.matrix(
+        read.xlsx(filename_xlsx, sheet = "4_Aandelenrendement", colNames = F)
+      ))[1:N, 1:Tmax]
+    DNB_Prijsinflatie_EU <-
+      unname(as.matrix(
+        read.xlsx(filename_xlsx, sheet = "5_Prijsinflatie_EU", colNames = F)
+      ))[1:N, 1:Tmax]
+    DNB_Prijsinflatie_NL <-
+      unname(as.matrix(
+        read.xlsx(filename_xlsx, sheet = "6_Prijsinflatie_NL", colNames = F)
+      ))[1:N, 1:Tmax]
+  }
+}
+
 # Equation (14)
-  
+
+if (DNB) {
   DNB_y <- array(0.0, dim = c(N, Taumax, (Tmax + 1)))
   for (t in 1:(Tmax + 1)) {
     for (tau in 1:Taumax) {
@@ -349,6 +416,44 @@ for (t in 1:(Tmax + 1)) {
 }
 
 rm(i, j, n, t, tau)
+
+compare <- function(A,
+                    B,
+                    nameA = deparse(substitute(A)),
+                    nameB = deparse(substitute(B))) {
+  qqplot(
+    A,
+    B,
+    bty = "n",
+    pch = 20,
+    asp = 1,
+    #
+    #         pty = "s",
+    xlab = paste(nameA, ", quantiles", sep = ""),
+    ylab = paste(nameB, ", quantiles", sep = ""),
+    panel.first = rect(
+      quantile(A, 0.005),
+      quantile(B, 0.005),
+      quantile(A, 0.995),
+      quantile(B, 0.995),
+      col = "lightgrey",
+      border = NA
+    )
+  )
+  text(
+    quantile(A, 0.005),
+    quantile(B, 0.995),
+    "\n\n\n\n\nGrey area: between 0.5th\nand 99.5th percentile",
+    pos = 4
+  )
+  abline(0,
+         1,
+         lwd = 2,
+         col = "red",
+         lty = 2)
+}
+
+compare(y[,3,5], DNB_y[,3,5])
 
 end_time <- Sys.time()
 end_time - start_time
