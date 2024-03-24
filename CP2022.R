@@ -30,7 +30,7 @@ DNB <- T # Use DNB scenarios or not
 setwd("~/R")
 filename_xlsx <- "cp2022-p-scenarioset-20k-2024q1.xlsx"
 filename_csv <- "CP2022 P scenarioset 100K 2024Q1.csv"
-N <- 20000 # Number of scenarios >= 2 (<= 100000 if DNB)
+N <- 25000 # Number of scenarios >= 2 (<= 100000 if DNB)
 Tmax <- 10 # Number of years >= 2
 Taumax <- 10 # Number of maturities >= 2
 CPB_Inflatie <- c(
@@ -111,8 +111,7 @@ if (N > 20000) {
       )
     ))[, 1:min(100, Tmax)]
     DNB_Prijsinflatie_NL <- unname(as.matrix(
-      read.csv(
-        filename_csv,
+      read.csv(filename_csv,
         skip = 500000,
         nrows = min(100000, N),
         header = F,
@@ -158,6 +157,8 @@ if (N > 20000) {
   }
 }
 
+rm(filename_csv, filename_xlsx)
+
 # Fix "rentedip"
 
 # DNB_Phi[,2] <- (DNB_Phi[,1] + DNB_Phi[,3]) / 2
@@ -177,6 +178,8 @@ if (DNB) {
     }
   }
 }
+
+rm(t, tau, DNB_X1, DNB_X2, DNB_X3)
 
 # Equation (3)
 
@@ -198,16 +201,14 @@ Sigmarpi <- rbind(
 # Equation (5)
 
 SigmaSPi <- rbind(DNB_Parameters[35:39], DNB_Parameters[40:44])
-D0 <- (SigmaSPi %*% Lambda0) %*% t(SigmaSPi)
-D0 <- c(D0[1, 1], D0[2, 2])
-mu0 <- DNB_Parameters[33:34]- ((1 / 2) * D0)
+mu0 <- DNB_Parameters[33:34] - (1 / 2) *
+  diag((SigmaSPi %*% Lambda0) %*% t(SigmaSPi))
 
 # Equation (6)
 
-D <- diag((SigmaSPi %*% Lambda) %*% t(SigmaSPi))
 K0 <- rbind(c(0, 1, 0),
             c(0, 0, 1)) -
-  ((1 / 2) * D %*% t(c(1, 0, 0)))
+  (1 / 2) * diag((SigmaSPi %*% Lambda) %*% t(SigmaSPi)) %*% t(c(1, 0, 0))
 
 n <- Tmax * 12
 t0 <- 0
@@ -259,7 +260,8 @@ k1_Andersen <- exp(-kappa_Andersen * dT_Andersen)
 k2_Andersen <-
   epsilon_Andersen ^ 2 * k1_Andersen * (1 - k1_Andersen) / kappa_Andersen
 k3_Andersen <-
-  exp(kappa_Andersen * dT_Andersen) * 0.5 * k2_Andersen * (1 - k1_Andersen) * Vlong_Andersen
+  exp(kappa_Andersen * dT_Andersen) * (1 / 2) * k2_Andersen *
+  (1 - k1_Andersen) * Vlong_Andersen
 psiC_Andersen <- 1.5
 
 for (j in 1:N) {
@@ -267,21 +269,13 @@ for (j in 1:N) {
     Simulation[j, i + 1, 1] <- f_Andersen(Vinst = Simulation[j, i, 1])
     Simulation[j, i, 7] <- (1 / omega) *
       ((Simulation[j, i, 1] * Deltat) ^ (-1 / 2)) *
-      (Simulation[j, i + 1, 1] - Simulation[j, i, 1] - K[1, 1] * (EX[1] - Simulation[j, i, 1]) * Deltat)
+      (Simulation[j, i + 1, 1] - Simulation[j, i, 1] -
+         K[1, 1] * (EX[1] - Simulation[j, i, 1]) * Deltat)
   }
 }
 
-rm(
-  f_Andersen,
-  Vlong_Andersen,
-  kappa_Andersen,
-  epsilon_Andersen,
-  dT_Andersen,
-  k1_Andersen,
-  k2_Andersen,
-  k3_Andersen,
-  psiC_Andersen
-)
+rm(f_Andersen, Vlong_Andersen, kappa_Andersen, epsilon_Andersen, dT_Andersen,
+   k1_Andersen, k2_Andersen, k3_Andersen, psiC_Andersen, i, j)
 
 # Equations (52)-(53)
 
@@ -301,6 +295,9 @@ for (j in 1:N) {
   }
 }
 
+rm(K, K0, Lambda, Lambda0, LeftM, Lpart, Rpart, Sigma, Sigmarpi, SigmaSPi, Temp,
+   Deltat12, DNB_Parameters, EX, mu0, omega, t0, i, j)
+
 # Equations (54)-(55)
 
 for (i in 1:n) {
@@ -311,64 +308,44 @@ for (i in 1:n) {
     Simulation[, i, 6] + Simulation[, i + 1, 5] - Simulation[, i, 5] + H
 }
 
-rm(
-  K,
-  K0,
-  Lambda,
-  Lambda0,
-  LeftM,
-  Lpart,
-  Rpart,
-  Sigma,
-  Sigmarpi,
-  SigmaSPi,
-  Temp,
-  D,
-  D0,
-  Deltat,
-  Deltat12,
-  DNB_Parameters,
-  EX,
-  H,
-  mu0,
-  omega,
-  t0
-)
+rm(CP_Inflatie, i, H, Deltat)
 
-X1 <- X2 <- X3 <- matrix(0.0, nrow = N, ncol = n / 12 + 1)
+BGEZ_X1 <- BGEZ_X2 <- BGEZ_X3 <- matrix(0.0, nrow = N, ncol = n / 12 + 1)
 for (i in (1:(n / 12 + 1))) {
-  X1[, i] <- Simulation[, i * 12 - 11, 1]
-  X2[, i] <- Simulation[, i * 12 - 11, 2]
-  X3[, i] <- Simulation[, i * 12 - 11, 3]
+  BGEZ_X1[, i] <- Simulation[, i * 12 - 11, 1]
+  BGEZ_X2[, i] <- Simulation[, i * 12 - 11, 2]
+  BGEZ_X3[, i] <- Simulation[, i * 12 - 11, 3]
 }
 
-Prijsinflatie_EU <-
-  Prijsinflatie_NL <-
-  Aandelenrendement <- matrix(0.0, nrow = N, ncol = n / 12)
+BGEZ_Prijsinflatie_EU <-
+  BGEZ_Prijsinflatie_NL <-
+  BGEZ_Aandelenrendement <- matrix(0.0, nrow = N, ncol = n / 12)
 for (i in (1:(n / 12))) {
-  Prijsinflatie_EU[, i] <-
+  BGEZ_Prijsinflatie_EU[, i] <-
     exp(Simulation[, i * 12 + 1, 5] - Simulation[, i * 12 - 11, 5]) - 1
-  Prijsinflatie_NL[, i] <-
+  BGEZ_Prijsinflatie_NL[, i] <-
     exp(Simulation[, i * 12 + 1, 6] - Simulation[, i * 12 - 11, 6]) - 1
-  Aandelenrendement[, i] <-
+  BGEZ_Aandelenrendement[, i] <-
     exp(Simulation[, i * 12 + 1, 4] - Simulation[, i * 12 - 11, 4]) - 1
 }
 
+rm(i)
+
 # Equation (14)
 
-y <- array(0.0, dim = c(N, Taumax, (Tmax + 1)))
+BGEZ_y <- array(0.0, dim = c(N, Taumax, (Tmax + 1)))
 for (t in 1:(Tmax + 1)) {
   for (tau in 1:Taumax) {
-    y[, tau, t] <-
+    BGEZ_y[, tau, t] <-
       exp(-(
-        DNB_Phi[tau, t] + DNB_Psi[tau, 1] * X1[, t] +
-          DNB_Psi[tau, 2] * X2[, t] +
-          DNB_Psi[tau, 3] * X3[, t]
+        DNB_Phi[tau, t] + DNB_Psi[tau, 1] * BGEZ_X1[, t] +
+          DNB_Psi[tau, 2] * BGEZ_X2[, t] +
+          DNB_Psi[tau, 3] * BGEZ_X3[, t]
       ) / tau) - 1
   }
 }
 
-rm(i, j, n, t, tau)
+rm(n, t, tau, DNB_Phi, DNB_Psi, BGEZ_X1, BGEZ_X2, BGEZ_X3)
 
 compare <- function(A,
                     B,
@@ -397,16 +374,14 @@ compare <- function(A,
     "\n\n\n\n\nGrey area: between 0.5th\nand 99.5th percentile",
     pos = 4
   )
-  abline(0,
-         1,
-         lwd = 2,
-         col = "red",
-         lty = 2)
+  abline(0, 1, lwd = 2, col = "red", lty = 2)
 }
 
 if (DNB) {
-  compare(y[,10,10], DNB_y[,10,10])
+  compare(BGEZ_y[,10,2], DNB_y[,10,2])
 }
 
 end_time <- Sys.time()
 end_time - start_time
+
+rm(start_time, end_time)
