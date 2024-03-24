@@ -4,7 +4,7 @@
 ###   Technical Appendix: Specification of the CP2022 Model
 ###   9.1 Simulation under P
 ###
-### Date: 19 March 2024
+### Date: 24 March 2024
 ### Author: Bob Galesloot
 ###
 ### Please send comments, suggestions, bugs, code etc. to
@@ -30,9 +30,9 @@ DNB <- T # Use DNB scenarios or not
 setwd("~/R")
 filename_xlsx <- "cp2022-p-scenarioset-20k-2024q1.xlsx"
 filename_csv <- "CP2022 P scenarioset 100K 2024Q1.csv"
-N <- 25000 # Number of scenarios >= 2 (<= 100000 if DNB)
+N <- 20000 # Number of scenarios >= 2 (<= 100000 if DNB)
 Tmax <- 10 # Number of years >= 2
-Taumax <- 20 # Number of maturities >= 2
+Taumax <- 10 # Number of maturities >= 2
 CPB_Inflatie <- c(
   rep(0.038, 12), # Number of months remaining in the year
   rep(0.026, 12),
@@ -158,6 +158,10 @@ if (N > 20000) {
   }
 }
 
+# Fix "rentedip"
+
+# DNB_Phi[,2] <- (DNB_Phi[,1] + DNB_Phi[,3]) / 2
+
 # Equation (14)
 
 if (DNB) {
@@ -176,25 +180,14 @@ if (DNB) {
 
 # Equation (3)
 
-EX <- c(DNB_Parameters[1], DNB_Parameters[2], DNB_Parameters[3])
-K <- rbind(
-  c(DNB_Parameters[7], 0, 0),
-  c(DNB_Parameters[8], DNB_Parameters[10], DNB_Parameters[12]),
-  c(DNB_Parameters[9], DNB_Parameters[11], DNB_Parameters[13])
+EX <- DNB_Parameters[1:3]
+K <- cbind(
+  DNB_Parameters[7:9],
+  c(0, DNB_Parameters[10:11]),
+  c(0, DNB_Parameters[12:13])
 )
-Lambda <- rbind(
-  c(DNB_Parameters[28], 0, 0, 0, 0),
-  c(0, DNB_Parameters[29], 0, 0, 0),
-  c(0, 0, DNB_Parameters[30], 0, 0),
-  c(0, 0, 0, DNB_Parameters[31], 0),
-  c(0, 0, 0, 0, DNB_Parameters[32])
-)
-Lambda1 <- Lambda[2:5, 2:5]
-Lambda0 <- rbind(c(0, 0, 0, 0, 0),
-                 c(0, 1, 0, 0, 0),
-                 c(0, 0, 1, 0, 0),
-                 c(0, 0, 0, 1, 0),
-                 c(0, 0, 0, 0, 1))
+Lambda <- diag(DNB_Parameters[28:32])
+Lambda0 <- diag(c(0, 1, 1, 1, 1))
 omega <- DNB_Parameters[21]
 Sigmarpi <- rbind(
   c(omega, 0, 0, 0, 0),
@@ -204,32 +197,14 @@ Sigmarpi <- rbind(
 
 # Equation (5)
 
-SigmaSPi <-
-  rbind(
-    c(
-      DNB_Parameters[35],
-      DNB_Parameters[36],
-      DNB_Parameters[37],
-      DNB_Parameters[38],
-      DNB_Parameters[39]
-    ),
-    c(
-      DNB_Parameters[40],
-      DNB_Parameters[41],
-      DNB_Parameters[42],
-      DNB_Parameters[43],
-      DNB_Parameters[44]
-    )
-  )
+SigmaSPi <- rbind(DNB_Parameters[35:39], DNB_Parameters[40:44])
 D0 <- (SigmaSPi %*% Lambda0) %*% t(SigmaSPi)
 D0 <- c(D0[1, 1], D0[2, 2])
-mu0 <- c(DNB_Parameters[33], DNB_Parameters[34]) -
-  ((1 / 2) * D0)
+mu0 <- DNB_Parameters[33:34]- ((1 / 2) * D0)
 
 # Equation (6)
 
-D <- (SigmaSPi %*% Lambda) %*% t(SigmaSPi)
-D <- c(D[1, 1], D[2, 2])
+D <- diag((SigmaSPi %*% Lambda) %*% t(SigmaSPi))
 K0 <- rbind(c(0, 1, 0),
             c(0, 0, 1)) -
   ((1 / 2) * D %*% t(c(1, 0, 0)))
@@ -247,11 +222,9 @@ Simulation <- array(0.0, dim = c(N, n + 1, 7))
 # Simulation[,, 6]: ln PiNL/PiNL
 # Simulation[,, 7]: eta
 
-for (j in 1:N) {
-  Simulation[j, 1, 1] <- DNB_Parameters[45] # v0
-  Simulation[j, 1, 2] <- DNB_Parameters[46] # r0
-  Simulation[j, 1, 3] <- DNB_Parameters[47] # pi0
-}
+Simulation[, 1, 1] <- DNB_Parameters[45] # v0
+Simulation[, 1, 2] <- DNB_Parameters[46] # r0
+Simulation[, 1, 3] <- DNB_Parameters[47] # pi0
 
 # Equation (51)
 
@@ -312,10 +285,7 @@ rm(
 
 # Equations (52)-(53)
 
-LeftM <- rbind(c(0, 1, 0, 0, 0),
-               c(0, 0, 1, 0, 0),
-               c(0, 0, 0, 1, 0),
-               c(0, 0, 0, 0, 1))
+LeftM <- cbind(c(0, 0, 0, 0), diag(4))
 Sigma <- rbind(Sigmarpi, SigmaSPi)
 Deltat12 <- Deltat ^ (1 / 2)
 for (j in 1:N) {
@@ -327,10 +297,7 @@ for (j in 1:N) {
                 Deltat12) %*%
       t(cbind(Simulation[j, i, 7], t(rnorm(4))))
     Temp <- LeftM %*% (Lpart + Rpart)
-    Simulation[j, i + 1, 2] <- Simulation[j, i, 2] + Temp[1]
-    Simulation[j, i + 1, 3] <- Simulation[j, i, 3] + Temp[2]
-    Simulation[j, i + 1, 4] <- Simulation[j, i, 4] + Temp[3]
-    Simulation[j, i + 1, 5] <- Simulation[j, i, 5] + Temp[4]
+    Simulation[j, i + 1, 2:5] <- Simulation[j, i, 2:5] + Temp
   }
 }
 
@@ -338,7 +305,7 @@ for (j in 1:N) {
 
 for (i in 1:n) {
   H <- # Be careful: DNB uses the first 20,000 scenerios, no matter N
-    -(1 / N) * sum(Simulation[, i + 1, 5] - Simulation[, i, 5]) +
+    - (1 / N) * sum(Simulation[, i + 1, 5] - Simulation[, i, 5]) +
     log(1 + CP_Inflatie[i]) * Deltat
   Simulation[, i + 1, 6] <-
     Simulation[, i, 6] + Simulation[, i + 1, 5] - Simulation[, i, 5] + H
@@ -349,7 +316,6 @@ rm(
   K0,
   Lambda,
   Lambda0,
-  Lambda1,
   LeftM,
   Lpart,
   Rpart,
@@ -369,36 +335,23 @@ rm(
   t0
 )
 
-X1 <- matrix(0.0, nrow = N, ncol = n / 12 + 1)
-X2 <- matrix(0.0, nrow = N, ncol = n / 12 + 1)
-X3 <- matrix(0.0, nrow = N, ncol = n / 12 + 1)
-for (j in 1:N) {
-  for (i in (1:(n / 12 + 1))) {
-    X1[j, i] <- Simulation[j, i * 12 - 11, 1]
-    X2[j, i] <- Simulation[j, i * 12 - 11, 2]
-    X3[j, i] <- Simulation[j, i * 12 - 11, 3]
-  }
+X1 <- X2 <- X3 <- matrix(0.0, nrow = N, ncol = n / 12 + 1)
+for (i in (1:(n / 12 + 1))) {
+  X1[, i] <- Simulation[, i * 12 - 11, 1]
+  X2[, i] <- Simulation[, i * 12 - 11, 2]
+  X3[, i] <- Simulation[, i * 12 - 11, 3]
 }
-Prijsinflatie_EU <- matrix(0.0, nrow = N, ncol = n / 12)
-for (j in 1:N) {
-  for (i in (1:(n / 12))) {
-    Prijsinflatie_EU[j, i] <-
-      exp(Simulation[j, i * 12 + 1, 5] - Simulation[j, i * 12 - 11, 5]) - 1
-  }
-}
-Prijsinflatie_NL <- matrix(0.0, nrow = N, ncol = n / 12)
-for (j in 1:N) {
-  for (i in (1:(n / 12))) {
-    Prijsinflatie_NL[j, i] <-
-      exp(Simulation[j, i * 12 + 1, 6] - Simulation[j, i * 12 - 11, 6]) - 1
-  }
-}
-Aandelenrendement <- matrix(0.0, nrow = N, ncol = n / 12)
-for (j in 1:N) {
-  for (i in (1:(n / 12))) {
-    Aandelenrendement[j, i] <-
-      exp(Simulation[j, i * 12 + 1, 4] - Simulation[j, i * 12 - 11, 4]) - 1
-  }
+
+Prijsinflatie_EU <-
+  Prijsinflatie_NL <-
+  Aandelenrendement <- matrix(0.0, nrow = N, ncol = n / 12)
+for (i in (1:(n / 12))) {
+  Prijsinflatie_EU[, i] <-
+    exp(Simulation[, i * 12 + 1, 5] - Simulation[, i * 12 - 11, 5]) - 1
+  Prijsinflatie_NL[, i] <-
+    exp(Simulation[, i * 12 + 1, 6] - Simulation[, i * 12 - 11, 6]) - 1
+  Aandelenrendement[, i] <-
+    exp(Simulation[, i * 12 + 1, 4] - Simulation[, i * 12 - 11, 4]) - 1
 }
 
 # Equation (14)
@@ -451,7 +404,9 @@ compare <- function(A,
          lty = 2)
 }
 
-compare(y[,3,5], DNB_y[,3,5])
+if (DNB) {
+  compare(y[,10,10], DNB_y[,10,10])
+}
 
 end_time <- Sys.time()
 end_time - start_time
