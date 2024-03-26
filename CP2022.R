@@ -258,7 +258,7 @@ f_Andersen <- function(Vinst) {
   m <- Vlong_Andersen + (V2 - Vlong_Andersen) * k1_Andersen
   psihat <- (m ^ 2) / (V2 * k2_Andersen + k3_Andersen)
   b2 <- 2 * psihat - 1 + sqrt(2 * psihat * (2 * psihat - 1))
-  V2 <- (m / (1 + b2)) * (sqrt(b2) + qnorm(runif(1))) ^ 2
+  V2 <- (m / (1 + b2)) * (sqrt(b2) + rnorm(1)) ^ 2
   return(V2)
 }
 
@@ -272,7 +272,7 @@ k2_Andersen <-
 k3_Andersen <-
   exp(kappa_Andersen * dT_Andersen) * (1 / 2) * k2_Andersen *
   (1 - k1_Andersen) * Vlong_Andersen
-psiC_Andersen <- 1.5
+#psiC_Andersen <- 1.5
 
 for (j in 1:N) {
   for (i in 1:n) {
@@ -285,7 +285,8 @@ for (j in 1:N) {
 }
 
 rm(f_Andersen, Vlong_Andersen, kappa_Andersen, epsilon_Andersen, dT_Andersen,
-   k1_Andersen, k2_Andersen, k3_Andersen, psiC_Andersen, i, j)
+   k1_Andersen, k2_Andersen, k3_Andersen, i, j)
+#rm(psiC_Andersen)
 
 # Equations (52)-(53)
 
