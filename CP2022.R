@@ -4,7 +4,7 @@
 ###   Technical Appendix: Specification of the CP2022 Model
 ###   9.1 Simulation under P
 ###
-### Date: 24 March 2024
+### Date: 26 March 2024
 ### Author: Bob Galesloot
 ###
 ### Please send comments, suggestions, bugs, code etc. to
@@ -30,7 +30,7 @@ DNB <- T # Use DNB scenarios or not
 setwd("~/R")
 filename_xlsx <- "cp2022-p-scenarioset-20k-2024q1.xlsx"
 filename_csv <- "CP2022 P scenarioset 100K 2024Q1.csv"
-N <- 25000 # Number of scenarios >= 2 (<= 100000 if DNB)
+N <- 20000 # Number of scenarios >= 2 (<= 100000 if DNB)
 Tmax <- 10 # Number of years >= 2
 Taumax <- 10 # Number of maturities >= 2
 CPB_Inflatie <- c(
@@ -177,9 +177,8 @@ if (DNB) {
         ) / tau) - 1
     }
   }
+  rm(t, tau, DNB_X1, DNB_X2, DNB_X3)
 }
-
-rm(t, tau, DNB_X1, DNB_X2, DNB_X3)
 
 # Equation (3)
 
@@ -229,7 +228,7 @@ Simulation[, 1, 3] <- DNB_Parameters[47] # pi0
 
 # Equation (51)
 
-f_Andersen <- function(Vinst) {
+f_Andersen2 <- function(Vinst) {
   V2 <- Vinst
   UV1 <- runif(1)
   m <- Vlong_Andersen + (V2 - Vlong_Andersen) * k1_Andersen
@@ -249,6 +248,17 @@ f_Andersen <- function(Vinst) {
       V2 <- log((1 - p) / (1 - UV1)) / beta
     }
   }
+  return(V2)
+}
+
+rm(f_Andersen2)
+
+f_Andersen <- function(Vinst) {
+  V2 <- Vinst
+  m <- Vlong_Andersen + (V2 - Vlong_Andersen) * k1_Andersen
+  psihat <- (m ^ 2) / (V2 * k2_Andersen + k3_Andersen)
+  b2 <- 2 * psihat - 1 + sqrt(2 * psihat * (2 * psihat - 1))
+  V2 <- (m / (1 + b2)) * (sqrt(b2) + qnorm(runif(1))) ^ 2
   return(V2)
 }
 
@@ -329,7 +339,7 @@ for (i in (1:(n / 12))) {
     exp(Simulation[, i * 12 + 1, 4] - Simulation[, i * 12 - 11, 4]) - 1
 }
 
-rm(i)
+rm(i, n)
 
 # Equation (14)
 
@@ -345,7 +355,7 @@ for (t in 1:(Tmax + 1)) {
   }
 }
 
-rm(n, t, tau, DNB_Phi, DNB_Psi, BGEZ_X1, BGEZ_X2, BGEZ_X3)
+rm(t, tau, DNB_Phi, DNB_Psi, BGEZ_X1, BGEZ_X2, BGEZ_X3)
 
 compare <- function(A,
                     B,
