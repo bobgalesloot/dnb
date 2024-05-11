@@ -168,16 +168,11 @@ rm(filename_csv, filename_xlsx)
 if (DNB) {
   DNB_y <- array(0.0, dim = c(N, Taumax, (Tmax + 1)))
   for (t in 1:(Tmax + 1)) {
-    for (tau in 1:Taumax) {
-      DNB_y[, tau, t] <-
-        exp(-(
-          DNB_Phi[tau, t] + DNB_Psi[tau, 1] * DNB_X1[, t] +
-            DNB_Psi[tau, 2] * DNB_X2[, t] +
-            DNB_Psi[tau, 3] * DNB_X3[, t]
-        ) / tau) - 1
-    }
+    DNB_y[,, t] <- t(exp(-(DNB_Phi[, t] + DNB_Psi[, 1] %o% DNB_X1[, t] +
+                             DNB_Psi[, 2] %o% DNB_X2[, t] +
+                             DNB_Psi[, 3] %o% DNB_X3[, t]) / c(1:Taumax)) - 1)
   }
-  rm(t, tau, DNB_X1, DNB_X2, DNB_X3)
+  rm(t, DNB_X1, DNB_X2, DNB_X3)
 }
 
 # Equation (3)
@@ -346,17 +341,12 @@ rm(i, n)
 
 BGEZ_y <- array(0.0, dim = c(N, Taumax, (Tmax + 1)))
 for (t in 1:(Tmax + 1)) {
-  for (tau in 1:Taumax) {
-    BGEZ_y[, tau, t] <-
-      exp(-(
-        DNB_Phi[tau, t] + DNB_Psi[tau, 1] * BGEZ_X1[, t] +
-          DNB_Psi[tau, 2] * BGEZ_X2[, t] +
-          DNB_Psi[tau, 3] * BGEZ_X3[, t]
-      ) / tau) - 1
+  BGEZ_y[,, t] <- t(exp(-(DNB_Phi[, t] + DNB_Psi[, 1] %o% BGEZ_X1[, t] +
+                            DNB_Psi[, 2] %o% BGEZ_X2[, t] +
+                            DNB_Psi[, 3] %o% BGEZ_X3[, t]) / c(1:Taumax)) - 1)
   }
-}
 
-rm(t, tau, DNB_Phi, DNB_Psi, BGEZ_X1, BGEZ_X2, BGEZ_X3)
+rm(t, DNB_Phi, DNB_Psi, BGEZ_X1, BGEZ_X2, BGEZ_X3)
 
 compare <- function(A,
                     B,
